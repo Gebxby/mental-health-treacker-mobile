@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mental-health-treacker-mobile/menu.dart';
+import 'package:mental_health_tracker/screens/menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,9 +16,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSwatch(
           primarySwatch: Colors.deepPurple,
         ).copyWith(secondary: Colors.deepPurple[400]),
-        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Mental Health Tracker'),
+      home: const MyHomePage(),
     );
   }
 }
