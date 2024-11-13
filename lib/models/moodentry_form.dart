@@ -1,5 +1,9 @@
+import 'dart:convert'; // Tambahkan ini untuk encoding JSON
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Tambahkan ini untuk provider
 import 'package:mental_health_tracker/widgets/left_drawer.dart';
+import 'package:mental_health_tracker/screens/menu.dart';
+import 'package:mental_health_tracker/utils/cookie_request.dart'; // Sesuaikan path jika diperlukan
 
 class MoodEntryFormPage extends StatefulWidget {
   const MoodEntryFormPage({super.key});
@@ -16,6 +20,8 @@ class _MoodEntryFormPageState extends State<MoodEntryFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>(); // Menambahkan CookieRequest
+
     return Scaffold(
       appBar: AppBar(
         title: const Center(
@@ -26,8 +32,7 @@ class _MoodEntryFormPageState extends State<MoodEntryFormPage> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      // Menambahkan drawer yang sudah dibuat
-      drawer: const LeftDrawer(),  // Menggunakan LeftDrawer yang sudah diimport
+      drawer: const LeftDrawer(),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -112,31 +117,44 @@ class _MoodEntryFormPageState extends State<MoodEntryFormPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all( // ganti MaterialStateProperty.all menjadi WidgetStateProperty
-                          Theme.of(context).colorScheme.primary),
+                      backgroundColor: MaterialStateProperty.all(
+                        Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // Menampilkan data mood di pop-up jika valid
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text("Data Mood"),
-                              content: Text(
-                                "Mood: $_mood\nFeelings: $_feelings\nMood Intensity: $_moodIntensity",
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
+                        // Mengirim data ke Django menggunakan CookieRequest
+                        final response = await request.postJson(
+                          "http://10.8.2.2/create-flutter/", // Ganti dengan URL backend
+                          jsonEncode(<String, String>{
+                            'mood': _mood,
+                            'mood_intensity': _moodIntensity.toString(),
+                            'feelings': _feelings,
+                          }),
                         );
+
+                        if (context.mounted) {
+                          if (response['status'] == 'success') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Mood baru berhasil disimpan!"),
+                              ),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MyHomePage(),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text("Terdapat kesalahan, silakan coba lagi."),
+                              ),
+                            );
+                          }
+                        }
                       }
                     },
                     child: const Text(
